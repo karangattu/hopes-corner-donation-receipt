@@ -82,9 +82,11 @@ export async function POST(req: NextRequest) {
       name,
       date,
       email,
-      donationType,
-      amount,
-      description,
+      organization,
+      address,
+      phone,
+      estimatedValue,
+      itemDescription,
       siteId: bodySiteId,
       itemId: bodyItemId,
       tableName: bodyTableName,
@@ -147,7 +149,7 @@ export async function POST(req: NextRequest) {
     const graphUrl = `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(site)}/drive/items/${encodeURIComponent(item)}/workbook/tables/${encodeURIComponent(table)}/rows/add`;
     console.log(`Calling Graph API to add row to table '${table}'...`);
 
-    const values = [[name || '', date || '', email || '', donationType || '', amount || '', description || '']];
+    const values = [[name || '', date || '', email || '', organization || '', address || '', phone || '', estimatedValue || '', itemDescription || '']];
 
     const graphRes = await fetch(graphUrl, {
       method: 'POST',

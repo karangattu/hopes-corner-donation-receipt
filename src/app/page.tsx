@@ -10,14 +10,37 @@ export default function Home() {
     name: '',
     date: new Date().toISOString().split('T')[0],
     email: '',
-    amount: '',
-    donationType: '',
-    description: '',
+    organization: '',
+    address: '',
+    phone: '',
+    estimatedValue: '',
+    itemDescription: '',
   });
   const [isClient] = useState(() => typeof window !== 'undefined');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionState, setSubmissionState] = useState<'idle' | 'success' | 'error'>('idle');
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.itemDescription.trim()) newErrors.itemDescription = 'Item Description is required';
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    if (formData.phone) {
+      const digits = formData.phone.replace(/\D/g, '');
+      if (digits.length < 10) {
+        newErrors.phone = 'Invalid phone number';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -26,9 +49,17 @@ export default function Home() {
       setSubmissionState('idle');
       setFeedbackMessage('');
     }
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const saveDonation = async () => {
+    if (!validate()) return;
     setIsSubmitting(true);
     setSubmissionState('idle');
     setFeedbackMessage('');
@@ -36,9 +67,11 @@ export default function Home() {
       name: formData.name,
       date: formData.date,
       email: formData.email,
-      donationType: formData.donationType,
-      amount: formData.amount,
-      description: formData.description,
+      organization: formData.organization,
+      address: formData.address,
+      phone: formData.phone,
+      estimatedValue: formData.estimatedValue,
+      itemDescription: formData.itemDescription,
     };
 
     try {
@@ -81,12 +114,15 @@ export default function Home() {
             name={formData.name}
             date={formData.date}
             email={formData.email}
-            amount={formData.amount}
-            donationType={formData.donationType}
-            description={formData.description}
+            organization={formData.organization}
+            address={formData.address}
+            phone={formData.phone}
+            estimatedValue={formData.estimatedValue}
+            itemDescription={formData.itemDescription}
+            logoUrl={window.location.origin + '/logo.png'}
           />
         }
-        fileName={`donation-receipt-${formData.name.replace(/\s+/g, '-').toLowerCase()}-${formData.donationType || 'donation'}-${formData.date}.pdf`}
+        fileName={`donation-receipt-${formData.name.replace(/\s+/g, '-').toLowerCase()}-${formData.date}.pdf`}
         className={baseStyles}
       >
         {({ loading }) => (loading ? 'Preparing receipt…' : 'Download Receipt')}
@@ -100,7 +136,7 @@ export default function Home() {
         <div className="text-center">
           <div className="flex justify-center">
             <Image
-              src="https://images.squarespace-cdn.com/content/v1/5622cd82e4b0501d40689558/cdab4aef-0027-40b7-9737-e2f893586a6a/Hopes_Corner_Logo_Green.png"
+              src="/logo.png"
               alt="Hope's Corner logo"
               width={180}
               height={62}
@@ -109,9 +145,24 @@ export default function Home() {
           </div>
         </div>
 
-        <div>
-          <section className="mx-auto max-w-2xl rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-xl shadow-slate-100">
-            <form className="space-y-6">
+        {submissionState === 'success' ? (
+          <div className="mx-auto max-w-2xl rounded-3xl border border-emerald-200 bg-emerald-50 p-8 shadow-xl text-center">
+            <h2 className="text-2xl font-bold text-emerald-900 mb-4">Thank you for submitting!</h2>
+            <p className="text-emerald-800 mb-6">{feedbackMessage}</p>
+            <div className="flex justify-center">
+              {renderDownloadLink('primary')}
+            </div>
+            <button
+              onClick={() => setSubmissionState('idle')}
+              className="mt-6 text-sm text-emerald-700 hover:text-emerald-900 underline"
+            >
+              Submit another donation
+            </button>
+          </div>
+        ) : (
+          <div>
+            <section className="mx-auto max-w-2xl rounded-3xl border border-slate-100 bg-white/90 p-8 shadow-xl shadow-slate-100">
+              <form className="space-y-6">
           <div>
             <label htmlFor="name" className="block text-sm font-semibold text-slate-900">
               Donor Name
@@ -123,9 +174,10 @@ export default function Home() {
               required
               value={formData.name}
               onChange={handleChange}
-              className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className={`mt-2 block w-full rounded-2xl border ${errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-200'} bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:ring-2`}
               placeholder="John Doe"
             />
+            {errors.name && <p className="mt-1 text-xs text-rose-600">{errors.name}</p>}
           </div>
 
           <div>
@@ -153,38 +205,67 @@ export default function Home() {
               id="email"
               value={formData.email}
               onChange={handleChange}
-              className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className={`mt-2 block w-full rounded-2xl border ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-200'} bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:ring-2`}
               placeholder="you@example.com"
+            />
+            {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="organization" className="block text-sm font-semibold text-slate-900">
+              Organization (Optional)
+            </label>
+            <input
+              type="text"
+              name="organization"
+              id="organization"
+              value={formData.organization}
+              onChange={handleChange}
+              className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              placeholder="Organization name"
             />
           </div>
 
           <div>
-            <label htmlFor="donationType" className="block text-sm font-semibold text-slate-900">
-              Type of Donation
+            <label htmlFor="address" className="block text-sm font-semibold text-slate-900">
+              Address (Optional)
             </label>
-            <select
-              id="donationType"
-              name="donationType"
-              value={formData.donationType}
+            <input
+              type="text"
+              name="address"
+              id="address"
+              value={formData.address}
               onChange={handleChange}
               className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-            >
-              <option value="">Select donation type</option>
-              <option value="Cash">Cash</option>
-              <option value="Merchandise">Merchandise</option>
-              <option value="Service">Service</option>
-            </select>
+              placeholder="Street address"
+            />
           </div>
 
           <div>
-            <label htmlFor="amount" className="block text-sm font-semibold text-slate-900">
-              Amount ($)
+            <label htmlFor="phone" className="block text-sm font-semibold text-slate-900">
+              Phone (Optional)
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              id="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className={`mt-2 block w-full rounded-2xl border ${errors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-200'} bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:ring-2`}
+              placeholder="(555) 123-4567"
+            />
+            {errors.phone && <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="estimatedValue" className="block text-sm font-semibold text-slate-900">
+              Estimated Value ($)
             </label>
             <input
               type="number"
-              name="amount"
-              id="amount"
-              value={formData.amount}
+              name="estimatedValue"
+              id="estimatedValue"
+              value={formData.estimatedValue}
               onChange={handleChange}
               className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
               placeholder="100.00"
@@ -192,18 +273,20 @@ export default function Home() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-semibold text-slate-900">
-              Description (Optional)
+            <label htmlFor="itemDescription" className="block text-sm font-semibold text-slate-900">
+              Item Description
             </label>
             <textarea
-              name="description"
-              id="description"
+              name="itemDescription"
+              id="itemDescription"
               rows={3}
-              value={formData.description}
+              required
+              value={formData.itemDescription}
               onChange={handleChange}
-              className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-              placeholder="General donation"
+              className={`mt-2 block w-full rounded-2xl border ${errors.itemDescription ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-200'} bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:ring-2`}
+              placeholder="Please provide detailed description of each donated item (e.g., qty, condition, materials, etc.)"
             />
+            {errors.itemDescription && <p className="mt-1 text-xs text-rose-600">{errors.itemDescription}</p>}
           </div>
 
               <div className="pt-2">
@@ -221,22 +304,11 @@ export default function Home() {
               </div>
             </form>
           </section>
-        </div>
-
-        {submissionState !== 'idle' && (
-          <div
-            className={`rounded-3xl border p-6 shadow-lg ${
-              submissionState === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                : 'border-rose-200 bg-rose-50 text-rose-900'
-            }`}
-          >
-            <p className="text-lg font-semibold">
-              {submissionState === 'success' ? 'Thank you for submitting!' : 'Submission failed'}
-            </p>
-            <p className="mt-2 text-sm">{feedbackMessage}</p>
-            {submissionState === 'success' && (
-              <div className="mt-4">{renderDownloadLink('secondary')}</div>
+            {submissionState === 'error' && (
+              <div className="mt-6 rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-900 shadow-lg">
+                <p className="font-semibold">Submission failed</p>
+                <p className="text-sm">{feedbackMessage}</p>
+              </div>
             )}
           </div>
         )}

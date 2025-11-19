@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Image as PDFImage } from '@react-pdf/renderer';
 
@@ -63,38 +65,54 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#444444',
   },
-  signatureSection: {
-    marginTop: 50,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  signatureBlock: {
+    marginTop: 40,
+    alignItems: 'center',
   },
-  signatureLine: {
+  signature: {
+    width: 200,
+    height: 40,
+    marginBottom: 8,
+  },
+  signatureTitle: {
+    fontSize: 10,
+    textAlign: 'center',
     borderTopWidth: 1,
     borderTopColor: '#000000',
-    width: 200,
-    marginTop: 40,
-    textAlign: 'center',
     paddingTop: 5,
-    fontSize: 10,
+    width: 200,
   },
 });
 
 interface DonationReceiptProps {
   name: string;
   date: string;
-  amount?: string;
-  description?: string;
+  estimatedValue?: string;
+  itemDescription?: string;
   email?: string;
-  donationType?: 'Cash' | 'Merchandise' | 'Service' | string;
+  organization?: string;
+  address?: string;
+  phone?: string;
+  logoUrl: string;
 }
 
-const DonationReceipt: React.FC<DonationReceiptProps> = ({ name, date, amount, description, email, donationType }) => (
+const DonationReceipt: React.FC<DonationReceiptProps> = ({
+  name,
+  date,
+  estimatedValue,
+  itemDescription,
+  email,
+  organization,
+  address,
+  phone,
+  logoUrl,
+}) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <PDFImage
-            src="https://images.squarespace-cdn.com/content/v1/5622cd82e4b0501d40689558/cdab4aef-0027-40b7-9737-e2f893586a6a/Hopes_Corner_Logo_Green.png"
+            src={logoUrl}
             style={{ width: 90, height: 40 }}
           />
           <View>
@@ -112,6 +130,21 @@ const DonationReceipt: React.FC<DonationReceiptProps> = ({ name, date, amount, d
 
         <Text style={styles.label}>Donor Name:</Text>
         <Text style={styles.value}>{name}</Text>
+
+        {organization && (
+          <>
+            <Text style={styles.label}>Organization:</Text>
+            <Text style={styles.value}>{organization}</Text>
+          </>
+        )}
+
+        {address && (
+          <>
+            <Text style={styles.label}>Address:</Text>
+            <Text style={styles.value}>{address}</Text>
+          </>
+        )}
+
         {email && (
           <>
             <Text style={styles.label}>Email:</Text>
@@ -119,37 +152,42 @@ const DonationReceipt: React.FC<DonationReceiptProps> = ({ name, date, amount, d
           </>
         )}
 
+        {phone && (
+          <>
+            <Text style={styles.label}>Phone:</Text>
+            <Text style={styles.value}>{phone}</Text>
+          </>
+        )}
+
         <Text style={styles.label}>Date of Donation:</Text>
         <Text style={styles.value}>{date}</Text>
 
-        {donationType && (
+        {estimatedValue && (
           <>
-            <Text style={styles.label}>Donation Type:</Text>
-            <Text style={styles.value}>{donationType}</Text>
+            <Text style={styles.label}>Estimated Value:</Text>
+            <Text style={styles.value}>${estimatedValue}</Text>
           </>
         )}
 
-        {amount && (
+        {itemDescription && (
           <>
-            <Text style={styles.label}>Donation Amount:</Text>
-            <Text style={styles.value}>${amount}</Text>
-          </>
-        )}
-
-        {description && (
-          <>
-            <Text style={styles.label}>Description:</Text>
-            <Text style={styles.value}>{description}</Text>
+            <Text style={styles.label}>Item Description:</Text>
+            <Text style={styles.value}>{itemDescription}</Text>
           </>
         )}
 
         <Text style={styles.text}>
           Hope&apos;s Corner Inc. is a 501(c)(3) non-profit organization. Federal Tax Identification Number EIN 47-3754161. No goods or services were provided in exchange for this contribution.
         </Text>
+
+        <View style={styles.signatureBlock}>
+          <PDFImage src="/priscilla_signature.png" style={styles.signature} />
+          <Text style={styles.signatureTitle}>Hope&apos;s Corner Representative</Text>
+        </View>
       </View>
 
       <View style={styles.footer}>
-        <Text>Hope&apos;s Corner Inc. | 748 Mercy Street | Mountain View, CA 94043 | (123) 456-7890 | https://www.hopes-corner.org/</Text>
+        <Text>Hope&apos;s Corner Inc. | 748 Mercy Street | Mountain View, CA 94043 | (650) 254-1450 | hopes-corner.org</Text>
         <Text>Thank you for making a difference!</Text>
       </View>
       <Text style={styles.ein}>EIN: 47-3754161</Text>
