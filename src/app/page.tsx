@@ -14,7 +14,7 @@ export default function Home() {
     address: '',
     phone: '',
     estimatedValue: '',
-    itemDescription: '',
+    items: [''],
   });
   const [isClient] = useState(() => typeof window !== 'undefined');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +25,11 @@ export default function Home() {
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.itemDescription.trim()) newErrors.itemDescription = 'Item Description is required';
+    
+    const validItems = formData.items.filter(item => item.trim() !== '');
+    if (validItems.length === 0) {
+      newErrors.items = 'At least one item description is required';
+    }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email address';
@@ -58,6 +62,30 @@ export default function Home() {
     }
   };
 
+  const handleItemChange = (index: number, value: string) => {
+    const newItems = [...formData.items];
+    newItems[index] = value;
+    setFormData(prev => ({ ...prev, items: newItems }));
+    if (errors.items) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.items;
+        return newErrors;
+      });
+    }
+  };
+
+  const addItem = () => {
+    setFormData(prev => ({ ...prev, items: [...prev.items, ''] }));
+  };
+
+  const removeItem = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  };
+
   const saveDonation = async () => {
     if (!validate()) return;
     setIsSubmitting(true);
@@ -71,7 +99,7 @@ export default function Home() {
       address: formData.address,
       phone: formData.phone,
       estimatedValue: formData.estimatedValue,
-      itemDescription: formData.itemDescription,
+      itemDescription: formData.items.filter(i => i.trim()).join('; '),
     };
 
     try {
@@ -118,7 +146,7 @@ export default function Home() {
             address={formData.address}
             phone={formData.phone}
             estimatedValue={formData.estimatedValue}
-            itemDescription={formData.itemDescription}
+            itemDescription={formData.items.filter(i => i.trim()).join('\n')}
             logoUrl={window.location.origin + '/logo.png'}
           />
         }
@@ -273,20 +301,40 @@ export default function Home() {
           </div>
 
           <div>
-            <label htmlFor="itemDescription" className="block text-sm font-semibold text-slate-900">
+            <label className="block text-sm font-semibold text-slate-900 mb-2">
               Item Description
             </label>
-            <textarea
-              name="itemDescription"
-              id="itemDescription"
-              rows={3}
-              required
-              value={formData.itemDescription}
-              onChange={handleChange}
-              className={`mt-2 block w-full rounded-2xl border ${errors.itemDescription ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-200'} bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:ring-2`}
-              placeholder="Please provide detailed description of each donated item (e.g., qty, condition, materials, etc.)"
-            />
-            {errors.itemDescription && <p className="mt-1 text-xs text-rose-600">{errors.itemDescription}</p>}
+            <div className="space-y-3">
+              {formData.items.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleItemChange(index, e.target.value)}
+                    className={`block w-full rounded-2xl border ${errors.items ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-200'} bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:ring-2`}
+                    placeholder={`Item ${index + 1}`}
+                  />
+                  {formData.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                      aria-label="Remove item"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addItem}
+              className="mt-3 text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+            >
+              + Add another item
+            </button>
+            {errors.items && <p className="mt-1 text-xs text-rose-600">{errors.items}</p>}
           </div>
 
               <div className="pt-2">
