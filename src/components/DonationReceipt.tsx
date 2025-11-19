@@ -113,10 +113,9 @@ const DonationReceipt: React.FC<DonationReceiptProps> = ({
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <PDFImage
             src={logoUrl}
-            style={{ width: 120, height: 41 }}
+            style={{ width: 134, height: 80 }}
           />
           <View>
-            <Text style={styles.title}>Hope&apos;s Corner Inc.</Text>
             <Text style={styles.subtitle}>Donation Receipt</Text>
             <Text style={styles.subtitle}>EIN: 47-3754161</Text>
           </View>
