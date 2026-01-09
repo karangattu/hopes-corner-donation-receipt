@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Code is required' }, { status: 400 });
     }
 
-    const staffCode = process.env.NEXT_PUBLIC_STAFF_ACCESS_CODE;
+    const staffCode = process.env.STAFF_ACCESS_CODE;
 
     if (!staffCode) {
       console.error('Staff access code not configured');
