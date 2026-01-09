@@ -6,6 +6,10 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import DonationReceipt from '@/components/DonationReceipt';
 
 export default function Home() {
+  const [staffAccessCode, setStaffAccessCode] = useState('');
+  const [showStaffPanel, setShowStaffPanel] = useState(false);
+  const [staffCodeError, setStaffCodeError] = useState('');
+  
   const [formData, setFormData] = useState({
     name: '',
     date: new Date().toISOString().split('T')[0],
@@ -218,9 +222,12 @@ export default function Home() {
               id="date"
               required
               value={formData.date}
-              onChange={handleChange}
-              className="mt-2 block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              readOnly
+              className="mt-2 block w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-base text-slate-600 shadow-sm cursor-not-allowed"
             />
+            <p className="mt-1 text-xs text-slate-500">
+              Set automatically to today's date.
+            </p>
           </div>
 
           <div>
@@ -358,6 +365,209 @@ export default function Home() {
                 <p className="text-sm">{feedbackMessage}</p>
               </div>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Staff Access Panel - Hidden by default */}
+      <div className="mx-auto max-w-5xl mt-8">
+        {!showStaffPanel ? (
+          <div className="text-center">
+              <button
+                onClick={async () => {
+                  const code = prompt('Enter staff access code:');
+                  if (!code) return;
+                  
+                  try {
+                    const res = await fetch('/api/verify-staff', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ code }),
+                    });
+                    const json = await res.json();
+                    if (res.ok && json.success) {
+                      setShowStaffPanel(true);
+                      setStaffCodeError('');
+                    } else {
+                      setStaffCodeError(json.error || 'Invalid access code');
+                    }
+                  } catch {
+                    setStaffCodeError('Verification failed. Please try again.');
+                  }
+                }}
+              className="text-xs text-slate-400 hover:text-slate-600 transition"
+            >
+              Staff Access
+            </button>
+            {staffCodeError && (
+              <p className="text-xs text-rose-500 mt-1">{staffCodeError}</p>
+            )}
+          </div>
+        ) : (
+          <div className="mx-auto max-w-2xl rounded-3xl border border-amber-200 bg-amber-50 p-8 shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-amber-900">Staff: Generate Receipt (No Save)</h2>
+              <button
+                onClick={() => {
+                  setShowStaffPanel(false);
+                  setStaffAccessCode('');
+                }}
+                className="text-sm text-amber-700 hover:text-amber-900"
+              >
+                Close Panel
+              </button>
+            </div>
+            <p className="text-sm text-amber-800 mb-4">
+              Use this to generate receipts for past dates without saving to Excel. 
+              Useful when donors didn't download their receipt at the time of donation.
+            </p>
+            <form className="space-y-4">
+              <div>
+                <label htmlFor="staffName" className="block text-sm font-semibold text-amber-900">
+                  Donor Name
+                </label>
+                <input
+                  type="text"
+                  id="staffName"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="mt-2 block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  placeholder="John Doe"
+                />
+              </div>
+              <div>
+                <label htmlFor="staffDate" className="block text-sm font-semibold text-amber-900">
+                  Date of Donation
+                </label>
+                <input
+                  type="date"
+                  id="staffDate"
+                  value={formData.date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  className="mt-2 block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                />
+              </div>
+              <div>
+                <label htmlFor="staffEmail" className="block text-sm font-semibold text-amber-900">
+                  Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  id="staffEmail"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="mt-2 block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="staffOrg" className="block text-sm font-semibold text-amber-900">
+                  Organization (Optional)
+                </label>
+                <input
+                  type="text"
+                  id="staffOrg"
+                  value={formData.organization}
+                  onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
+                  className="mt-2 block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  placeholder="Organization name"
+                />
+              </div>
+              <div>
+                <label htmlFor="staffAddress" className="block text-sm font-semibold text-amber-900">
+                  Address (Optional)
+                </label>
+                <input
+                  type="text"
+                  id="staffAddress"
+                  value={formData.address}
+                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  className="mt-2 block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  placeholder="Street address"
+                />
+              </div>
+              <div>
+                <label htmlFor="staffPhone" className="block text-sm font-semibold text-amber-900">
+                  Phone (Optional)
+                </label>
+                <input
+                  type="tel"
+                  id="staffPhone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="mt-2 block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+              <div>
+                <label htmlFor="staffValue" className="block text-sm font-semibold text-amber-900">
+                  Estimated Value ($)
+                </label>
+                <input
+                  type="number"
+                  id="staffValue"
+                  value={formData.estimatedValue}
+                  onChange={(e) => setFormData(prev => ({ ...prev, estimatedValue: e.target.value }))}
+                  className="mt-2 block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  placeholder="100.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-amber-900 mb-2">
+                  Item Description
+                </label>
+                <div className="space-y-2">
+                  {formData.items.map((item, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={item}
+                        onChange={(e) => handleItemChange(index, e.target.value)}
+                        className="block w-full rounded-xl border border-amber-300 bg-white px-4 py-2 text-base text-slate-900 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                        placeholder={`Item ${index + 1}`}
+                      />
+                      {formData.items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(index)}
+                          className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="mt-2 text-sm font-semibold text-amber-600 hover:text-amber-700"
+                >
+                  + Add another item
+                </button>
+              </div>
+              {isClient && formData.name && (
+                <PDFDownloadLink
+                  document={
+                    <DonationReceipt
+                      name={formData.name}
+                      date={formData.date}
+                      email={formData.email}
+                      organization={formData.organization}
+                      address={formData.address}
+                      phone={formData.phone}
+                      estimatedValue={formData.estimatedValue}
+                      itemDescription={formData.items.filter(i => i.trim()).join('\n')}
+                      logoUrl={window.location.origin + '/logo.png'}
+                    />
+                  }
+                  fileName={`donation-receipt-${formData.name.replace(/\s+/g, '-').toLowerCase()}-${formData.date}.pdf`}
+                  className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 transition"
+                >
+                  {({ loading }) => (loading ? 'Preparing receipt…' : 'Generate & Download Receipt')}
+                </PDFDownloadLink>
+              )}
+            </form>
           </div>
         )}
       </div>

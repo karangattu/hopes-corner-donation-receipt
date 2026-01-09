@@ -145,11 +145,22 @@ export async function POST(req: NextRequest) {
       return new Response(JSON.stringify({ error: 'Missing SharePoint Table Name. Check SHAREPOINT_TABLE_NAME or SHAREPOINT_WORKSHEET_NAME.' }), { status: 400 });
     }
 
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return new Response(JSON.stringify({ error: 'Donor name is required' }), { status: 400 });
+    }
+    if (!date || !date.trim()) {
+      return new Response(JSON.stringify({ error: 'Donation date is required' }), { status: 400 });
+    }
+    if (!itemDescription || !itemDescription.trim()) {
+      return new Response(JSON.stringify({ error: 'Item description is required' }), { status: 400 });
+    }
+
     // Build Graph endpoint URL to add rows to the Excel table
     const graphUrl = `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(site)}/drive/items/${encodeURIComponent(item)}/workbook/tables/${encodeURIComponent(table)}/rows/add`;
     console.log(`Calling Graph API to add row to table '${table}'...`);
 
-    const values = [[name || '', date || '', email || '', organization || '', address || '', phone || '', estimatedValue || '', itemDescription || '']];
+    const values = [[name, date, email || '', organization || '', address || '', phone || '', estimatedValue || '', itemDescription]];
 
     const graphRes = await fetch(graphUrl, {
       method: 'POST',
